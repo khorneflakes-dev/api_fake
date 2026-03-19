@@ -1,0 +1,16 @@
+id,nombre,categoria,precio,stock,descripcion
+1,Laptop Pro 15,Electronica,299.99,50,Laptop de alto rendimiento con 16GB RAM y SSD 512GB
+2,Auriculares Bluetooth,Accesorios,89.99,120,Auriculares inalambricos con cancelacion de ruido
+3,Teclado Mecanico,Accesorios,15.99,200,Teclado mecanico RGB retroiluminado
+4,Mouse Ergonomico,Accesorios,45.00,150,Mouse ergonomico inalambrico con DPI ajustable
+5,Cable USB-C,Cables,8.50,500,Cable USB-C de carga rapida 2 metros
+6,Funda para Laptop,Accesorios,12.00,300,Funda protectora de neopreno para laptop 15 pulgadas
+7,Monitor 24 Full HD,Electronica,199.99,30,Monitor 24 pulgadas Full HD IPS 75Hz
+8,Webcam HD 1080p,Electronica,79.99,80,Webcam Full HD con microfono integrado
+9,Hub USB 4 puertos,Cables,22.50,180,Hub USB 3.0 de 4 puertos compacto
+10,Silla Gamer,Mobiliario,350.00,20,Silla gamer ergonomica con reposa brazos ajustable
+11,Soporte para Monitor,Mobiliario,65.00,60,Soporte articulado para monitor con gestion de cables
+12,Pad Mouse XL,Accesorios,18.00,250,Pad de mouse extra grande 90x40cm
+13,Teclado Numerico,Accesorios,25.00,100,Teclado numerico USB compacto
+14,Adaptador HDMI,Cables,14.00,400,Adaptador HDMI a VGA con audio
+15,Limpiador Pantallas,Limpieza,6.00,600,Kit de limpieza para pantallas y teclados
