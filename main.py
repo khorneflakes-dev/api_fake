@@ -12,6 +12,7 @@ VALID_TOKEN = os.getenv("API_TOKEN", "mi_token")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 VENTAS_CSV = os.path.join(BASE_DIR, "ventas.csv")
 PRODUCTOS_CSV = os.path.join(BASE_DIR, "productos.csv")
+INVENTARIO_CSV = os.path.join(BASE_DIR, "inventario.csv")
 
 app = FastAPI(
     title="API Fake — Ventas y Productos",
@@ -74,6 +75,7 @@ def paginar(datos: list[dict], desde: int, limit: int) -> dict:
 def get_ventas(
     desde: int = Query(default=0, ge=0, description="Índice de inicio (offset)"),
     limit: int = Query(default=10, ge=1, le=100, description="Cantidad máxima de registros a devolver"),
+    prueba_lote: int | None = Query(default=None, ge=1, description="Número máximo de filas del CSV a usar (para pruebas de carga incremental)"),
     _token: str = Depends(verificar_token),
 ):
     """
@@ -81,8 +83,11 @@ def get_ventas(
 
     - **desde**: posición de inicio en el listado (por defecto 0).
     - **limit**: número de registros por página (por defecto 10, máximo 100).
+    - **prueba_lote**: limita el total de filas leídas del CSV; útil para probar cargas incrementales sin modificar el archivo.
     """
     datos = leer_csv(VENTAS_CSV)
+    if prueba_lote is not None:
+        datos = datos[:prueba_lote]
     return paginar(datos, desde, limit)
 
 
@@ -126,3 +131,53 @@ def get_producto(
         if item.get("id") == str(producto_id):
             return item
     raise HTTPException(status_code=404, detail=f"Producto con id={producto_id} no encontrado.")
+
+
+@app.get("/inventario", summary="Listado de inventario con soft delete")
+def get_inventario(
+    desde: int = Query(default=0, ge=0, description="Índice de inicio (offset)"),
+    limit: int = Query(default=10, ge=1, le=100, description="Cantidad máxima de registros a devolver"),
+    incluir_eliminados: bool = Query(default=False, description="Si es true devuelve también los registros con is_deleted=true"),
+    solo_modificados: bool = Query(default=False, description="Si es true devuelve únicamente registros cuyo updated_at es distinto de created_at"),
+    prueba_lote: int | None = Query(default=None, ge=1, description="Número máximo de filas del CSV a usar (para pruebas de carga incremental)"),
+    _token: str = Depends(verificar_token),
+):
+    """
+    Devuelve el inventario con soporte de soft delete y seguimiento de cambios.
+
+    - **incluir_eliminados**: por defecto sólo se retornan registros activos (`is_deleted=false`).
+    - **solo_modificados**: filtra únicamente los registros que han sido actualizados (`updated_at != created_at`).
+    - **prueba_lote**: limita el total de filas leídas del CSV antes de aplicar filtros; útil para probar cargas incrementales.
+    - **desde** / **limit**: paginación estándar.
+    """
+    datos = leer_csv(INVENTARIO_CSV)
+
+    if prueba_lote is not None:
+        datos = datos[:prueba_lote]
+
+    if not incluir_eliminados:
+        datos = [r for r in datos if r.get("is_deleted", "false").lower() != "true"]
+
+    if solo_modificados:
+        datos = [r for r in datos if r.get("created_at") != r.get("updated_at")]
+
+    return paginar(datos, desde, limit)
+
+
+@app.get("/inventario/{item_id}", summary="Detalle de un ítem del inventario por ID")
+def get_inventario_item(
+    item_id: int,
+    incluir_eliminados: bool = Query(default=False, description="Si es true permite recuperar registros con is_deleted=true"),
+    _token: str = Depends(verificar_token),
+):
+    """
+    Devuelve un ítem del inventario por su `id`.
+    Por defecto no retorna ítems eliminados; usa `incluir_eliminados=true` para acceder a ellos.
+    """
+    datos = leer_csv(INVENTARIO_CSV)
+    for item in datos:
+        if item.get("id") == str(item_id):
+            if not incluir_eliminados and item.get("is_deleted", "false").lower() == "true":
+                raise HTTPException(status_code=404, detail=f"Ítem con id={item_id} fue eliminado. Usa incluir_eliminados=true para verlo.")
+            return item
+    raise HTTPException(status_code=404, detail=f"Ítem con id={item_id} no encontrado en inventario.")
