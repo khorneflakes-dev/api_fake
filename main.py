@@ -133,20 +133,20 @@ def get_producto(
     raise HTTPException(status_code=404, detail=f"Producto con id={producto_id} no encontrado.")
 
 
-@app.get("/inventario", summary="Listado de inventario con soft delete")
+@app.get("/inventario", summary="Listado de inventario con filtros de fecha")
 def get_inventario(
     desde: int = Query(default=0, ge=0, description="Índice de inicio (offset)"),
     limit: int = Query(default=10, ge=1, le=100, description="Cantidad máxima de registros a devolver"),
-    incluir_eliminados: bool = Query(default=False, description="Si es true devuelve también los registros con is_deleted=true"),
-    solo_modificados: bool = Query(default=False, description="Si es true devuelve únicamente registros cuyo updated_at es distinto de created_at"),
+    created_at: str | None = Query(default=None, description="Filtra registros cuyo created_at comienza con este valor (ej. '2024-12-07' o '2024-12-07T09:01:00')"),
+    updated_at: str | None = Query(default=None, description="Filtra registros cuyo updated_at comienza con este valor (ej. '2025-01-08' o '2025-01-08T12:01:00')"),
     prueba_lote: int | None = Query(default=None, ge=1, description="Número máximo de filas del CSV a usar (para pruebas de carga incremental)"),
     _token: str = Depends(verificar_token),
 ):
     """
-    Devuelve el inventario con soporte de soft delete y seguimiento de cambios.
+    Devuelve el inventario con filtros de fecha.
 
-    - **incluir_eliminados**: por defecto sólo se retornan registros activos (`is_deleted=false`).
-    - **solo_modificados**: filtra únicamente los registros que han sido actualizados (`updated_at != created_at`).
+    - **created_at**: filtra registros cuyo campo `created_at` comienza con el valor indicado.
+    - **updated_at**: filtra registros cuyo campo `updated_at` comienza con el valor indicado.
     - **prueba_lote**: limita el total de filas leídas del CSV antes de aplicar filtros; útil para probar cargas incrementales.
     - **desde** / **limit**: paginación estándar.
     """
@@ -155,11 +155,11 @@ def get_inventario(
     if prueba_lote is not None:
         datos = datos[:prueba_lote]
 
-    if not incluir_eliminados:
-        datos = [r for r in datos if r.get("is_deleted", "false").lower() != "true"]
+    if created_at is not None:
+        datos = [r for r in datos if r.get("created_at", "").startswith(created_at)]
 
-    if solo_modificados:
-        datos = [r for r in datos if r.get("created_at") != r.get("updated_at")]
+    if updated_at is not None:
+        datos = [r for r in datos if r.get("updated_at", "").startswith(updated_at)]
 
     return paginar(datos, desde, limit)
 
