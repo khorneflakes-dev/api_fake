@@ -137,8 +137,8 @@ def get_producto(
 def get_inventario(
     desde: int = Query(default=0, ge=0, description="Índice de inicio (offset)"),
     limit: int = Query(default=10, ge=1, le=100, description="Cantidad máxima de registros a devolver"),
-    created_at: str | None = Query(default=None, description="Filtra registros cuyo created_at comienza con este valor (ej. '2024-12-07' o '2024-12-07T09:01:00')"),
-    updated_at: str | None = Query(default=None, description="Filtra registros cuyo updated_at comienza con este valor (ej. '2025-01-08' o '2025-01-08T12:01:00')"),
+    created_at: str | None = Query(default=None, description="Filtra registros cuyo created_at es mayor o igual a este valor (ej. '2024-12-07' o '2024-12-07T09:01:00')"),
+    updated_at: str | None = Query(default=None, description="Filtra registros cuyo updated_at es mayor o igual a este valor (ej. '2025-01-08' o '2025-01-08T12:01:00')"),
     prueba_lote: int | None = Query(default=None, ge=1, description="Número máximo de filas del CSV a usar (para pruebas de carga incremental)"),
     _token: str = Depends(verificar_token),
 ):
@@ -156,10 +156,10 @@ def get_inventario(
         datos = datos[:prueba_lote]
 
     if created_at is not None:
-        datos = [r for r in datos if r.get("created_at", "").startswith(created_at)]
+        datos = [r for r in datos if r.get("created_at", "") >= created_at]
 
     if updated_at is not None:
-        datos = [r for r in datos if r.get("updated_at", "").startswith(updated_at)]
+        datos = [r for r in datos if r.get("updated_at", "") >= updated_at]
 
     return paginar(datos, desde, limit)
 
